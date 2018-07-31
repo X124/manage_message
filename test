@@ -1,0 +1,101 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Jul 30 14:29:46 2018
+
+@author: Xu
+"""
+import re
+import sqlite3
+import tkinter as tk
+def get_contentlist(self):
+    words=[]
+    lines=self.split('\n')
+    for line in lines:
+        if re.search(r"(\d{4}-\d{1,2}-\d{1,2})",line):
+            datetime=line
+            words.append(['datetime',datetime])
+        if re.search("^PL19.*[0-9]",line):
+            wellname=re.search("^PL19.*[0-9]",line).group(0)
+            words.append(['wellname',wellname])
+        if re.search("[:：]",line):
+            word=re.split(r'[：:]',line)
+            words.append(word)
+    return words
+
+
+
+def putdatainsqlite3(self):
+    conn=sqlite3.connect('test.db')
+    c=conn.cursor()
+    c.execute('''CREATE TABLE IF NOT EXISTS dizhiribao 
+             (ID INTEGER PRIMARY KEY AUTOINCREMENT,
+             datetime TEXT NOT NULL,
+             wellname TEXT NOT NULL,
+             plan_depth TEXT,
+             cur_depth TEXT,
+             mud_pro TEXT,
+             first_well TEXT,
+             welldone_layer TEXT,
+             cur_oper TEXT,
+             next_oper TEXT);''')
+    datetime=''
+    wellname=''
+    plan_depth=''
+    cur_depth=''
+    mud_pro=''
+    first_well=''
+    welldone_layer=''
+    cur_oper=''
+    next_oper=''
+    
+    for words in self:
+        if words[0]=='datetime':
+            datetime=words[1]
+        if words[0]=='wellname':
+            wellname=words[1]
+        if words[0]=='设计井深':
+            plan_depth=words[1]
+        if words[0]=='当前井深':
+            cur_depth=words[1] 
+        if words[0]=='泥浆性能':
+            mud_pro=words[1] 
+        if words[0]=='一开中完':
+            first_well=words[1]        
+        if words[0]=='中完层位':
+            welldone_layer=words[1]    
+        if words[0]=='当前作业':
+            cur_oper=words[1]    
+        if words[0]=='下步作业':
+            next_oper=words[1]
+            
+    p='''INSERT INTO dizhiribao(datetime,wellname,plan_depth,cur_depth,mud_pro,first_well,welldone_layer,cur_oper,next_oper)\
+    VALUES(\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\");'''%(datetime,wellname,plan_depth,cur_depth,mud_pro,first_well,welldone_layer,cur_oper,next_oper)
+    c.execute(p)
+    conn.commit()
+    conn.close()
+    
+def finddata():
+    conn=sqlite3.connect('test.db')
+    c=conn.cursor()
+    c.execute('''SELECT * FROM dizhiribao
+          ''')
+    
+    a=c.fetchall
+    print(a())
+    conn.close()
+
+   
+
+
+ 
+text=input("Please tab:")
+#解析
+words=get_contentlist(text)
+#建立数据库，导入数据
+putdatainsqlite3(words)
+#查询
+finddata()
+            
+
+    
+
